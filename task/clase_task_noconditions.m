@@ -1,4 +1,12 @@
 function [subjdata] = clase_task_noconditions(subjID, do_full, do_TTL, do_prac)
+
+% Last update to this f(x) on this machine: 07.19.22 -MLD
+%
+%
+% To run task: clase_task_noconditions('997', 1, 1, 1)
+%
+% CHANGED pwd on line 47
+%
 % [subjdata] = clase_task_noconditions(subjID, do_full, do_TTL, do_prac)
 % 
 % subjID: '###', i.e. '001', '012', etc.
@@ -13,7 +21,7 @@ function [subjdata] = clase_task_noconditions(subjID, do_full, do_TTL, do_prac)
 % do_prac:
 %       0 = do not do practice trials (for testing)
 %       1 = do practice trials
-%
+% 
 %
 % Script for running the choice set once, with no separate conditions
 % for the CLASE study. Should be run from within the GitHub repository, so 
@@ -33,7 +41,8 @@ function [subjdata] = clase_task_noconditions(subjID, do_full, do_TTL, do_prac)
 %     cd(homepath);
 % catch
     homepath = pwd;
-    choiceset_fullpath = '../choice_set/novel_choiceset_creation/clasechoiceset_N135_gainloss_gainonly.csv';
+    choiceset_fullpath = 'C:\Users\jatne\OneDrive\Documents\GitHub\clasedecisiontask-main\choice_set\novel_choiceset_creation\clasechoiceset_N135_gainloss_gainonly.csv';
+    %choiceset_fullpath = '../choice_set/novel_choiceset_creation/clasechoiceset_N135_gainloss_gainonly.csv';
     cd(homepath);
 % end
 
@@ -73,7 +82,7 @@ fprintf('Proceeding with subject ID of %s\n',subjID);
 
 %------- General Setup -------%
 
-%Initialize rand to a different state each time:
+% Initialize rand to a different state each time:
 if verLessThan('matlab','7.12')
     rand('twister',sum(100*clock))
     fprintf('Set rng using oldest method\n');
@@ -85,6 +94,11 @@ else
     rng('shuffle'); % 'shuffle' makes the seed based on the current time
     fprintf('Set rng using newest method\n')
 end
+
+% Initialize TTL setup 
+if do_TTL == 1
+    [~, device] = Cedrus_TTL();
+end  
 
 if do_full
     HideCursor; % remove the cursor so it doesn't just show up on our screen
@@ -135,14 +149,6 @@ resp_keys = {'z','m'}; % FIRST entry for selecting left, SECOND entry for select
 resp_key_codes = KbName(resp_keys); % get the key codes for the response keys
 
 %------- Specific Study Setup -------%
-
-% Initialize/check TTL setup with three pulses
-if do_TTL
-    for i = 1:3
-        DatapixxAOttl(); % TTL pulse
-        WaitSecs(0.5);
-    end
-end
 
 fname = sprintf('clase_behavior_CLASE%s_%.4f.mat',subjID,now);
 % this will create a unique data file name so that data will not be
@@ -290,8 +296,7 @@ try
 
     %---------------------Practice-----------------------%
     
-    if do_prac
-        
+    if do_prac     
         DrawFormattedText(wind,'You will now do ten (10) practice trials. These look and work identically to real trials (i.e. timing, dollar values), but do not count!','center',.1*h,wht,40);
         Screen('Flip',wind,[],1);
         WaitSecs(1.5);
@@ -319,7 +324,7 @@ try
         %--Start practice--%
         subjdata.practice.studystart = GetSecs; % log the study start time if it's the first trial
         if do_TTL
-            DatapixxAOttl(); % TTL pulse marking start of the practice block
+            write(device,sprintf("mh%c%c", 20, 0), "char"); % TTL pulse marking start of the practice block
         end
         
         for t = 1:nTp
@@ -347,7 +352,7 @@ try
             
             subjdata.practice.stimStart(t) = Screen('Flip',wind,[],1); %show the stimuli
             if do_TTL
-                DatapixxAOttl(); % TTL pulse marking start of option presentation
+                write(device,sprintf("mh%c%c",30, 0), "char"); % TTL pulse marking start of option presentation
             end
             
             % ready the response period stuff that will show up in the response
@@ -370,7 +375,7 @@ try
             %display keys for choices on screen
             subjdata.practice.choiceStart(t) = Screen('Flip',wind); % show the v and n on the screen, nows ps can respond
             if do_TTL
-                DatapixxAOttl(); % TTL pulse marking start of response window
+                write(device,sprintf("mh%c%c",31, 0), "char"); % TTL pulse marking start of response window
             end
             
             while GetSecs - subjdata.practice.studystart < t*(prestime + choicetime) + (t-1)*(isitime + feedbacktime) + sum(ititime(1:(t-1)))
@@ -395,7 +400,7 @@ try
             Screen('gluDisk',wind,wht,xCenter,yCenter,3); % make a white dot that will be displayed during ISI
             subjdata.practice.isiStart(t) = Screen('Flip',wind); %now isi starts
             if do_TTL
-                DatapixxAOttl(); % TTL pulse marking start of ISI
+                write(device,sprintf("mh%c%c",32, 0), "char"); % TTL pulse marking start of ISI
             end
             
             if any(keyCode(resp_key_codes))
@@ -468,7 +473,7 @@ try
             
             subjdata.practice.otcStart(t) =  Screen('Flip',wind); % show feedback
             if do_TTL
-                DatapixxAOttl(); % TTL pulse marking outcome presentation
+                write(device,sprintf("mh%c%c",40, 0), "char"); % TTL pulse marking outcome presentation
             end
             
             Screen('gluDisk',wind,wht,xCenter,yCenter,3); % make a white dot that will be displayed during iti
@@ -491,7 +496,7 @@ try
             
             subjdata.practice.itiStart(t) = Screen('Flip',wind); %show white dot on the screen
             if do_TTL
-                DatapixxAOttl(); % TTL pulse marking start of ITI
+                write(device,sprintf("mh%c%c",41, 0), "char"); % TTL pulse marking start of ITI
             end
             
             %fprintf(fid,'riskyGain %0.2f, safe, %0.2f, loc, %g, choice, %g, outcome, %0.2f, RT, %0.2f, ISI, %g, ITI, %g\n', subjdata.practice.riskyGain(t),subjdata.practice.alternative(t),subjdata.practice.loc(t), subjdata.practice.choice(t), subjdata.practice.outcome(t), subjdata.practice.RTs(t)); %save txt file of what we have
@@ -512,7 +517,7 @@ try
         
         subjdata.practice.studystop = GetSecs; % mark the end-time
         if do_TTL
-            DatapixxAOttl(); % TTL pulse marking end of practice block
+            write(device,sprintf("mh%c%c",21, 0), "char"); % TTL pulse marking end of practice block
         end
         
         DrawFormattedText(wind,'You have completed the practice!\n\n\n If you have any questions, please ask the experimenter now!','center','center', wht, 40);
@@ -576,7 +581,7 @@ try
     %Now the real task can begin!
     
     if do_TTL
-        DatapixxAOttl(); % TTL pulse marking start of the actual study
+        write(device,sprintf("mh%c%c",50, 0), "char"); % TTL pulse marking start of the actual study
     end
     subjdata.ts.studystart = GetSecs; % log the study start time
     b = 1;
@@ -651,7 +656,7 @@ try
         
         subjdata.ts.stimStart(t) = Screen('Flip',wind,[],1); %show the stimuli
         if do_TTL
-            DatapixxAOttl(); % TTL pulse marking screen flip that shows choice options
+            write(device,sprintf("mh%c%c",60, 0), "char"); % TTL pulse marking screen flip that shows choice options
         end
         
         % ready the response period stuff that will show up in the response
@@ -673,7 +678,7 @@ try
         %display keys for choices on screen
         subjdata.ts.choiceStart(t) = Screen('Flip',wind); % show the v and n on the screen, nows ps can respond
         if do_TTL
-            DatapixxAOttl(); % TTL pulse marking start of the response window
+            write(device,sprintf("mh%c%c", 61, 0), "char"); % TTL pulse marking start of the response window
         end
         
         while GetSecs - subjdata.ts.blockStart(b) < triBlock*(prestime + choicetime) + (triBlock-1)*(isitime + feedbacktime) + sum(ititime(triBlockStart(b):(t-1)))
@@ -695,8 +700,8 @@ try
         %------ISI------%
         Screen('gluDisk',wind,wht,xCenter,yCenter,3); % make a white dot that will be displayed during ISI
         subjdata.ts.isiStart(t) = Screen('Flip',wind); %now isi starts
-        if do_TTL
-            DatapixxAOttl(); % TTL pulse marking end of the response window (due to button press OR expiration of time            
+        if do_TTL           
+            write(device,sprintf("mh%c%c",62, 0), "char"); % TTL pulse marking end of the response window (due to button press OR expiration of time
         end
         
         if any(keyCode(resp_key_codes))
@@ -770,7 +775,7 @@ try
         
         subjdata.ts.otcStart(t) =  Screen('Flip',wind); % show feedback
         if do_TTL
-            DatapixxAOttl(); % TTL pulse marking start of the outcome epoch
+            write(device,sprintf("mh%c%c", 70, 0), "char"); % TTL pulse marking start of the outcome epoch
         end
         
         Screen('gluDisk',wind,wht,xCenter,yCenter,3); % make a white dot that will be displayed during iti
@@ -793,7 +798,7 @@ try
         
         subjdata.ts.itiStart(t) = Screen('Flip',wind); %show white dot on the screen
         if do_TTL
-            DatapixxAOttl(); % TTL pulse marking end of outcome epoch
+            write(device,sprintf("mh%c%c", 71, 0), "char"); % TTL pulse marking end of outcome epoch
         end
         
         fprintf(fid,'%0.2f, %0.2f, %0.2f, %g, %g, %g, %0.2f, %0.2f, %g, %g, %g, %g, %g, %s\n', ...
@@ -817,7 +822,7 @@ try
     
     subjdata.ts.studystop = GetSecs; % mark the end-time
     if do_TTL
-        DatapixxAOttl(); % TTL pulse marking end of the study
+        write(device,sprintf("mh%c%c", 51, 0), "char"); % TTL pulse marking end of the study
     end
     
     %---Outcome selection and wrap up---%

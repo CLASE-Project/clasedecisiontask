@@ -1,18 +1,18 @@
 TTL pulse marking start of the practice block (line 327) = 20
 TTL pulse marking start of option presentation (line 355) = 30
-TTL pulse marking start of response window (line 378) = 31
+TTL pulse marking start of response window (line 378) = 34
 TTL pulse marking start of ISI (line 403) = 32
 TTL pulse marking outcome presentation (line 476) = 40
-TTL pulse marking start of ITI (line 499) = 41
-TTL pulse marking end of practice block (line 520) = 21
+TTL pulse marking start of ITI (line 499) = 44
+TTL pulse marking end of practice block (line 520) = 24
 
 TTL pulse marking start of the actual study (684) = 50
 TTL pulse marking screen flip that shows choice options (line 659) = 60
-TTL pulse marking start of the response window (line 704) = 61
-TTL pulse marking end of the response window (line 725) = 62
+TTL pulse marking start of the response window (line 704) = 64
+TTL pulse marking end of the response window (line 725) = 64
 TTL pulse marking start of the outcome epoch (line 778) = 70
-TTL pulse marking end of outcome epoch (line 801) = 71
-TTL pulse marking end of the study (line 825) = 51
+TTL pulse marking end of outcome epoch (line 801) = 74
+TTL pulse marking end of the study (line 825) = 54
 
 
 Replaced all %DatapixxAOttl();

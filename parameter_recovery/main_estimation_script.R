@@ -1,6 +1,7 @@
 #### Environment setup #### 
 
 # Working directory needs to be set to `parameter_recovery` directory of the repository.
+setwd('/Users/sokolhessner/Documents/gitrepos/clasedecisiontask/parameter_recovery/')
 
 source('./choice_probability.R');
 source('./binary_choice_from_probability.R')
@@ -12,7 +13,7 @@ library('foreach')
 library('numDeriv')
 eps = .Machine$double.eps;
 
-iterations_per_estimation = 100; # how many times to perform the maximum likelihood estimation procedure on a given choiceset, for robustness.
+iterations_per_estimation = 200; # how many times to perform the maximum likelihood estimation procedure on a given choiceset, for robustness.
 
 #### Path to the Data ####
 
@@ -74,9 +75,11 @@ for (subject in 1:number_of_subjects){
   choiceset = tmpdata[, 1:3];
   choices = tmpdata$choice;
   
+  number_check_trials = sum(tmpdata$ischecktrial);
+  
   likelihood_correct_check_trial[subject] = check_trial_analysis(tmpdata);
   
-  print(sprintf('Subject %03i missed %i trials; had a %.2f likelihood of correctly answering check trials.',subjIDs[subject],0+sum((data$subjID == subjIDs[subject]) & is.na(data$choice)),likelihood_correct_check_trial[subject]),quote = F)
+  print(sprintf('Subject %03i missed %i trials; had a %.2f likelihood of correctly answering %g check trials.',subjIDs[subject],0+sum((data$subjID == subjIDs[subject]) & is.na(data$choice)), likelihood_correct_check_trial[subject], number_check_trials), quote = F)
 
   # Placeholders for all the iterations of estimation we're doing
   all_estimates = matrix(nrow = iterations_per_estimation, ncol = number_of_parameters);
@@ -130,6 +133,25 @@ for (subject in 1:number_of_subjects){
 
 parallel::stopCluster(cl = my.cluster)
 estimation_time_elapsed = (proc.time()[[3]] - estimation_start_time)/60/60; # time elapsed in HOURS
+
+keepsubj = vector(length = number_of_subjects);
+keepsubj[] = T; # set default to keep
+keepsubj[subjIDs == 6] = F; # CLASE 006 dropped (boundary estimates; poor performance on check trials)
+
+number_of_subjects_kept = sum(keepsubj);
+
+par(mfrow = c(1,3))
+plot(array(data = 1, dim = c(number_of_subjects_kept,1)),estimated_parameters[keepsubj,'lambda'],
+     ylab = 'Loss aversion coefficient (lambda)', xlab = '', xaxt = 'n', ylim = c(0,6), col = 'red', cex = 3)
+lines(c(0,2), c(1,1), lty = 'dashed')
+plot(array(data = 1, dim = c(number_of_subjects_kept,1)),estimated_parameters[keepsubj,'rho'],
+     ylab = 'Risk attitudes (rho)', xlab = '', xaxt = 'n', ylim = c(0,2), col = 'green', cex = 3)
+lines(c(0,2), c(1,1), lty = 'dashed')
+plot(array(data = 1, dim = c(number_of_subjects_kept,1)),estimated_parameters[keepsubj,'mu'],
+     ylab = 'Choice consistency (mu)', xlab = '', xaxt = 'n', ylim = c(0,60), col = 'blue', cex = 3)
+mtext(paste0('Estimates for ', number_of_subjects_kept, ' subjects'),side = 3,line = - 2,outer = TRUE)
+par(mfrow = c(1,1))
+
 
 # save(list = c('recovered_parameters','recovered_nlls','recovered_parameter_errors',
 #               'simulated_choice_data','truevals_rho','truevals_lambda','truevals_mu',

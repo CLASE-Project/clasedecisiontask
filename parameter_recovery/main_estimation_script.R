@@ -153,6 +153,30 @@ mtext(paste0('Estimates for ', number_of_subjects_kept, ' subjects'),side = 3,li
 par(mfrow = c(1,1))
 
 
+par(mfrow = c(1,3))
+barplot_lambda <- barplot(horiz = T, estimated_parameters[keepsubj,'lambda'], 
+              col = 'red', xlim = c(0,3), xlab = 'Loss aversion (lambda)')
+arrows(y0 = barplot_lambda,
+       x0 = estimated_parameters[keepsubj,'lambda'] - estimated_parameter_errors[keepsubj,'lambda'],
+       x1 = estimated_parameters[keepsubj,'lambda'] + estimated_parameter_errors[keepsubj,'lambda'],
+       length = 0)
+lines(x = c(1,1), y = c(0,10), lty = 'dashed')
+barplot_rho <- barplot(horiz = T, estimated_parameters[keepsubj,'rho'], 
+                          col = 'green', xlim = c(0,2), xlab = 'Risk attitudes (rho)')
+arrows(y0 = barplot_lambda,
+       x0 = estimated_parameters[keepsubj,'rho'] - estimated_parameter_errors[keepsubj,'rho'],
+       x1 = estimated_parameters[keepsubj,'rho'] + estimated_parameter_errors[keepsubj,'rho'],
+       length = 0)
+lines(x = c(1,1), y = c(0,10), lty = 'dashed')
+barplot_mu <- barplot(horiz = T, estimated_parameters[keepsubj,'mu'], 
+                       col = 'blue', xlim = c(0,60), xlab = 'Consistency (mu)')
+arrows(y0 = barplot_lambda,
+       x0 = estimated_parameters[keepsubj,'mu'] - estimated_parameter_errors[keepsubj,'mu'],
+       x1 = estimated_parameters[keepsubj,'mu'] + estimated_parameter_errors[keepsubj,'mu'],
+       length = 0)
+mtext(paste0('Estimates for ', number_of_subjects_kept, ' subjects'),side = 3,line = - 2,outer = TRUE)
+par(mfrow = c(1,1))
+
 # save(list = c('recovered_parameters','recovered_nlls','recovered_parameter_errors',
 #               'simulated_choice_data','truevals_rho','truevals_lambda','truevals_mu',
 #               'truevals','number_of_subjects','simulations_per_subject','iterations_per_estimation',

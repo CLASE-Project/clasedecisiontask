@@ -1,6 +1,6 @@
 function [subjdata] = clase_task_noconditions(subjID, do_full, do_TTL, do_prac)
 
-% Last update to this f(x) on this machine: 07.19.22 -MLD
+% Last update to this f(x) on this machine: 10.10.22 -MLD
 %
 %
 % To run task: clase_task_noconditions('997', 1, 1, 1)
@@ -375,7 +375,7 @@ try
             %display keys for choices on screen
             subjdata.practice.choiceStart(t) = Screen('Flip',wind); % show the v and n on the screen, nows ps can respond
             if do_TTL
-                write(device,sprintf("mh%c%c",31, 0), "char"); % TTL pulse marking start of response window
+                write(device,sprintf("mh%c%c",34, 0), "char"); % TTL pulse marking start of response window
             end
             
             while GetSecs - subjdata.practice.studystart < t*(prestime + choicetime) + (t-1)*(isitime + feedbacktime) + sum(ititime(1:(t-1)))
@@ -496,7 +496,7 @@ try
             
             subjdata.practice.itiStart(t) = Screen('Flip',wind); %show white dot on the screen
             if do_TTL
-                write(device,sprintf("mh%c%c",41, 0), "char"); % TTL pulse marking start of ITI
+                write(device,sprintf("mh%c%c",44, 0), "char"); % TTL pulse marking start of ITI
             end
             
             %fprintf(fid,'riskyGain %0.2f, safe, %0.2f, loc, %g, choice, %g, outcome, %0.2f, RT, %0.2f, ISI, %g, ITI, %g\n', subjdata.practice.riskyGain(t),subjdata.practice.alternative(t),subjdata.practice.loc(t), subjdata.practice.choice(t), subjdata.practice.outcome(t), subjdata.practice.RTs(t)); %save txt file of what we have
@@ -517,7 +517,7 @@ try
         
         subjdata.practice.studystop = GetSecs; % mark the end-time
         if do_TTL
-            write(device,sprintf("mh%c%c",21, 0), "char"); % TTL pulse marking end of practice block
+            write(device,sprintf("mh%c%c",24, 0), "char"); % TTL pulse marking end of practice block
         end
         
         DrawFormattedText(wind,'You have completed the practice!\n\n\n If you have any questions, please ask the experimenter now!','center','center', wht, 40);
@@ -678,7 +678,7 @@ try
         %display keys for choices on screen
         subjdata.ts.choiceStart(t) = Screen('Flip',wind); % show the v and n on the screen, nows ps can respond
         if do_TTL
-            write(device,sprintf("mh%c%c", 61, 0), "char"); % TTL pulse marking start of the response window
+            write(device,sprintf("mh%c%c", 64, 0), "char"); % TTL pulse marking start of the response window
         end
         
         while GetSecs - subjdata.ts.blockStart(b) < triBlock*(prestime + choicetime) + (triBlock-1)*(isitime + feedbacktime) + sum(ititime(triBlockStart(b):(t-1)))
@@ -798,7 +798,7 @@ try
         
         subjdata.ts.itiStart(t) = Screen('Flip',wind); %show white dot on the screen
         if do_TTL
-            write(device,sprintf("mh%c%c", 71, 0), "char"); % TTL pulse marking end of outcome epoch
+            write(device,sprintf("mh%c%c", 74, 0), "char"); % TTL pulse marking end of outcome epoch
         end
         
         fprintf(fid,'%0.2f, %0.2f, %0.2f, %g, %g, %g, %0.2f, %0.2f, %g, %g, %g, %g, %g, %s\n', ...
@@ -822,7 +822,7 @@ try
     
     subjdata.ts.studystop = GetSecs; % mark the end-time
     if do_TTL
-        write(device,sprintf("mh%c%c", 51, 0), "char"); % TTL pulse marking end of the study
+        write(device,sprintf("mh%c%c", 54, 0), "char"); % TTL pulse marking end of the study
     end
     
     %---Outcome selection and wrap up---%

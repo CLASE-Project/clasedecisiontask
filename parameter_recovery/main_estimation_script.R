@@ -152,30 +152,57 @@ plot(array(data = 1, dim = c(number_of_subjects_kept,1)),estimated_parameters[ke
 mtext(paste0('Estimates for ', number_of_subjects_kept, ' subjects'),side = 3,line = - 2,outer = TRUE)
 par(mfrow = c(1,1))
 
+# 
+# original_estimated_parameters = estimated_parameters; 
+# original_estimated_parameter_errors = estimated_parameter_errors;
+# 
+# ind = rank(estimated_parameters[,'lambda'])
+# 
+# estimated_parameters = estimated_parameters[ind,];
+# estimated_parameter_errors = estimated_parameter_errors[ind,];
 
+pdf(file="behavioral_estimates.pdf", width = 5, height = 2.8)
 par(mfrow = c(1,3))
 barplot_lambda <- barplot(horiz = T, estimated_parameters[keepsubj,'lambda'], 
-              col = 'red', xlim = c(0,3), xlab = 'Loss aversion (lambda)')
+              col = rgb(1,.45,.2), xlim = c(0,5), xlab = 'Loss aversion (lambda)')
+axis(side = 2, at = c(-1,10))
 arrows(y0 = barplot_lambda,
        x0 = estimated_parameters[keepsubj,'lambda'] - estimated_parameter_errors[keepsubj,'lambda'],
        x1 = estimated_parameters[keepsubj,'lambda'] + estimated_parameter_errors[keepsubj,'lambda'],
        length = 0)
+axis(side = 2, at = c(-1,10))
 lines(x = c(1,1), y = c(0,10), lty = 'dashed')
+points(x = mean(estimated_parameters[keepsubj,'lambda']), y = 0, pch = 24, cex = 2, bg = rgb(1,.45,.2))
+points(x = 2.22, y = 0, pch = 24, cex = 1, bg = 'black')
+points(x = 1.62, y = 0, pch = 24, cex = 1, bg = 'white')
+
 barplot_rho <- barplot(horiz = T, estimated_parameters[keepsubj,'rho'], 
-                          col = 'green', xlim = c(0,2), xlab = 'Risk attitudes (rho)')
+                          col = rgb(1,1,0), xlim = c(0,2), xlab = 'Risk attitudes (rho)')
 arrows(y0 = barplot_lambda,
        x0 = estimated_parameters[keepsubj,'rho'] - estimated_parameter_errors[keepsubj,'rho'],
        x1 = estimated_parameters[keepsubj,'rho'] + estimated_parameter_errors[keepsubj,'rho'],
        length = 0)
+axis(side = 2, at = c(-1,10))
 lines(x = c(1,1), y = c(0,10), lty = 'dashed')
+points(x = mean(estimated_parameters[keepsubj,'rho']), y = 0, pch = 24, cex = 2, bg = rgb(1,1,0))
+points(x = 0.92, y = 0, pch = 24, cex = 1, bg = 'black')
+points(x = 0.88, y = 0, pch = 24, cex = 1, bg = 'white')
+
 barplot_mu <- barplot(horiz = T, estimated_parameters[keepsubj,'mu'], 
-                       col = 'blue', xlim = c(0,60), xlab = 'Consistency (mu)')
+                       col = rgb(0,1,1), xlim = c(0,100), xlab = 'Consistency (mu)')
 arrows(y0 = barplot_lambda,
        x0 = estimated_parameters[keepsubj,'mu'] - estimated_parameter_errors[keepsubj,'mu'],
        x1 = estimated_parameters[keepsubj,'mu'] + estimated_parameter_errors[keepsubj,'mu'],
        length = 0)
-mtext(paste0('Estimates for ', number_of_subjects_kept, ' subjects'),side = 3,line = - 2,outer = TRUE)
+axis(side = 2, at = c(-1,10))
+points(x = mean(estimated_parameters[keepsubj,'mu']), y = 0, pch = 24, cex = 2, bg = rgb(0,1,1))
+points(x = 25.9, y = 0, pch = 24, cex = 1, bg = 'black')
+points(x = 65.0, y = 0, pch = 24, cex = 1, bg = 'white')
+# save(sprintf('gainloss_CLASE%03g_forgrant.eps',subjIDs[subject]),height=4.2,width=4.6,dpi=1200);
+
+# mtext(paste0('Estimates for ', number_of_subjects_kept, ' subjects'),side = 3,line = - 2,outer = TRUE)
 par(mfrow = c(1,1))
+dev.off()
 
 # save(list = c('recovered_parameters','recovered_nlls','recovered_parameter_errors',
 #               'simulated_choice_data','truevals_rho','truevals_lambda','truevals_mu',

@@ -1,4 +1,6 @@
-
+subject_data = data[data$subjID == 9,];
+ind = 5;
+subject = ind;
 
 
 graphing_data = subject_data[subject_data$ischecktrial==0,];
@@ -11,19 +13,19 @@ missedtrials = missedtrials[missedtrials$ischecktrial == 0,]
 
 gainonly_xvals = c(0,40);
 gainonly_lines = data.frame('xvals' = gainonly_xvals);
-gainonly_lines$yvals_fit = (.5 * gainonly_xvals^estimated_parameters[1,1])^(1/estimated_parameters[1,1])
+gainonly_lines$yvals_fit = (.5 * gainonly_xvals^estimated_parameters[ind,'rho'])^(1/estimated_parameters[ind,'rho'])
 gainonly_lines$yvals_neutral = c(0,20);
-gainonly_lines$yvals_riskaverse09 = (.5 * gainonly_xvals^.9)^(1/.9);
-gainonly_lines$yvals_riskaverse075 = (.5 * gainonly_xvals^.75)^(1/.75);
-gainonly_lines$yvals_riskseeking11 = (.5 * gainonly_xvals^1.1)^(1/1.1);
+# gainonly_lines$yvals_riskaverse09 = (.5 * gainonly_xvals^.9)^(1/.9);
+# gainonly_lines$yvals_riskaverse075 = (.5 * gainonly_xvals^.75)^(1/.75);
+# gainonly_lines$yvals_riskseeking11 = (.5 * gainonly_xvals^1.1)^(1/1.1);
 
 gainloss_xvals = c(0,13);
 gainloss_lines = data.frame('xvals' = gainloss_xvals);
-gainloss_lines$yvals_fit = -((.5 * gainloss_xvals^estimated_parameters[1,1])/(0.5 * estimated_parameters[1,2]))^(1/estimated_parameters[1,1])
+gainloss_lines$yvals_fit = -((.5 * gainloss_xvals^estimated_parameters[ind,'rho'])/(0.5 * estimated_parameters[ind,'lambda']))^(1/estimated_parameters[ind,'rho'])
 gainloss_lines$yvals_neutral = -gainloss_xvals;
-gainloss_lines$yvals_gainseeking = -((.5 * gainloss_xvals^1)/(0.5 * .8)^(1/1));
-gainloss_lines$yvals_lossaverse2 = -((.5 * gainloss_xvals^1)/(0.5 * 2)^(1/1));
-gainloss_lines$yvals_lossaverse5 = -((.5 * gainloss_xvals^1)/(0.5 * 5)^(1/1));
+# gainloss_lines$yvals_gainseeking = -((.5 * gainloss_xvals^1)/(0.5 * .8)^(1/1));
+# gainloss_lines$yvals_lossaverse2 = -((.5 * gainloss_xvals^1)/(0.5 * 2)^(1/1));
+# gainloss_lines$yvals_lossaverse5 = -((.5 * gainloss_xvals^1)/(0.5 * 5)^(1/1));
 
 graphing_data = graphing_data[order(graphing_data$riskyloss),];
 
@@ -37,9 +39,9 @@ binary_gainonly_plot = ggplot(data = graphing_data[graphing_data$riskyloss >= 0,
   #            shape = 21, color = 'black', fill = alpha('gray',0.5), stroke = 0.5, aes(size = 2)) +
   geom_line(data = gainonly_lines, aes(x = xvals, y = yvals_fit), color = 'black', linetype = 'dashed', size = 1) + 
   geom_line(data = gainonly_lines, aes(x = xvals, y = yvals_neutral), color = 'black', size = 1) + 
-  geom_line(data = gainonly_lines, aes(x = xvals, y = yvals_riskaverse09), color = 'red4', size = 1) +
-  geom_line(data = gainonly_lines, aes(x = xvals, y = yvals_riskaverse075), color = 'red', size = 1) +
-  geom_line(data = gainonly_lines, aes(x = xvals, y = yvals_riskseeking11), color = 'steelblue1', size = 1) + 
+  # geom_line(data = gainonly_lines, aes(x = xvals, y = yvals_riskaverse09), color = 'red4', size = 1) +
+  # geom_line(data = gainonly_lines, aes(x = xvals, y = yvals_riskaverse075), color = 'red', size = 1) +
+  # geom_line(data = gainonly_lines, aes(x = xvals, y = yvals_riskseeking11), color = 'steelblue1', size = 1) + 
   coord_cartesian(xlim = c(0, 33), ylim = c(0, 14.4), expand = F);
 print(binary_gainonly_plot);
 ggsave(sprintf('gainonly_CLASE%03g_forgrant.eps',subjIDs[subject]),height=4.2,width=4.6,dpi=1200);
@@ -54,9 +56,9 @@ binary_gainloss_plot = ggplot(data = graphing_data[graphing_data$riskyloss < 0,]
   #            shape = 21, color = 'black', fill = alpha('gray',1), stroke = 0.4, size = 3) + 
   geom_line(data = gainloss_lines, aes(x = xvals, y = yvals_fit), color = 'black', linetype = 'dashed', size = 1) + 
   geom_line(data = gainloss_lines, aes(x = xvals, y = yvals_neutral), color = 'black', size = 1) + 
-  geom_line(data = gainloss_lines, aes(x = xvals, y = yvals_gainseeking), color = 'steelblue1', size = 1) + 
-  geom_line(data = gainloss_lines, aes(x = xvals, y = yvals_lossaverse2), color = 'red', size = 1) + 
-  geom_line(data = gainloss_lines, aes(x = xvals, y = yvals_lossaverse5), color = 'red4', size = 1) + 
+  # geom_line(data = gainloss_lines, aes(x = xvals, y = yvals_gainseeking), color = 'steelblue1', size = 1) + 
+  # geom_line(data = gainloss_lines, aes(x = xvals, y = yvals_lossaverse2), color = 'red', size = 1) + 
+  # geom_line(data = gainloss_lines, aes(x = xvals, y = yvals_lossaverse5), color = 'red4', size = 1) + 
   coord_cartesian(xlim = c(0, 12.5), ylim = c(-21, 0), expand = F);
 print(binary_gainloss_plot);
 ggsave(sprintf('gainloss_CLASE%03g_forgrant.eps',subjIDs[subject]),height=4.2,width=4.6,dpi=1200);

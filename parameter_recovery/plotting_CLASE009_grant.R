@@ -1,5 +1,7 @@
-subject_data = data[data$subjID == 9,];
-ind = 5;
+subject_to_be_graphed = 9;
+
+subject_data = data[data$subjID == subject_to_be_graphed,];
+ind = which(subjIDs == subject_to_be_graphed);
 subject = ind;
 
 

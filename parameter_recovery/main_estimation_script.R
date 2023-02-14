@@ -137,6 +137,15 @@ estimation_time_elapsed = (proc.time()[[3]] - estimation_start_time)/60/60; # ti
 keepsubj = vector(length = number_of_subjects);
 keepsubj[] = T; # set default to keep
 keepsubj[subjIDs == 6] = F; # CLASE 006 dropped (boundary estimates; poor performance on check trials)
+keepsubj[subjIDs == 20] = F; # CLASE 020 dropped (boundary estimate for L; so-so performance on check trials)
+
+print(estimated_parameters[keepsubj,])
+
+cat(sprintf('Mean choice likelihood = %.2f', mean(mean_choice_likelihood[keepsubj])))
+
+df_foroutput = cbind(subjIDs[keepsubj],estimated_parameters[keepsubj,],estimated_parameter_errors[keepsubj,])
+colnames(df_foroutput) <- c('subjectIDs','rho','lambda','mu','rhoSE','lambdaSE','muSE')
+write.csv(df_foroutput,file = sprintf('estimation_results_%s.csv',format(Sys.Date(), format="%Y%m%d")), row.names = F)
 
 number_of_subjects_kept = sum(keepsubj);
 
@@ -208,4 +217,26 @@ dev.off()
 #               'simulated_choice_data','truevals_rho','truevals_lambda','truevals_mu',
 #               'truevals','number_of_subjects','simulations_per_subject','iterations_per_estimation',
 #               'choiceset'), file = 'parameter_recovery_output.RData')
+
+gain_val = 10;
+loss_vals = seq(from = 0, to = -19, by = -.2)
+
+gainloss_vals_diff = gain_val + loss_vals;
+
+p_risky = array(dim = c(number_of_subjects_kept, length(loss_vals)));
+
+keeponly_estimated_parameters = estimated_parameters[keepsubj,];
+
+for (s in 1:number_of_subjects_kept){
+  tmprho = keeponly_estimated_parameters[s,'rho'];
+  tmplambda = keeponly_estimated_parameters[s,'lambda'];
+  tmpmu = keeponly_estimated_parameters[s,'mu'];
+  p_risky[s,] = 1/(1 + exp(-tmpmu / (32^tmprho) * (gain_val^tmprho + -tmplambda * abs(loss_vals)^tmprho)));
+}
+
+plot(gainloss_vals_diff, p_risky[1,], type = 'l', col = rgb(0, 0, 0, .5), lwd = 4)
+for (s in 2:number_of_subjects_kept){
+  lines(x = gainloss_vals_diff, y = p_risky[s,], col = rgb(0, 0, 0, .5), lwd = 4)
+}
+
 

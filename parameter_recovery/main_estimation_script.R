@@ -79,7 +79,7 @@ for (subject in 1:number_of_subjects){
   
   likelihood_correct_check_trial[subject] = check_trial_analysis(tmpdata);
   
-  print(sprintf('Subject %03i missed %i trials; had a %.2f likelihood of correctly answering %g check trials.',subjIDs[subject],0+sum((data$subjID == subjIDs[subject]) & is.na(data$choice)), likelihood_correct_check_trial[subject], number_check_trials), quote = F)
+  cat(sprintf('Subject %03i missed %i trials; had a %.2f likelihood of correctly answering %g check trials.\n',subjIDs[subject],0+sum((data$subjID == subjIDs[subject]) & is.na(data$choice)), likelihood_correct_check_trial[subject], number_check_trials))
 
   # Placeholders for all the iterations of estimation we're doing
   all_estimates = matrix(nrow = iterations_per_estimation, ncol = number_of_parameters);
@@ -120,7 +120,10 @@ for (subject in 1:number_of_subjects){
     theme_linedraw() + theme(legend.position = "none", aspect.ratio=1) + 
     ggtitle(sprintf('Gain-Loss Decisions: CLASE%03g',subjIDs[subject]));
   print(binary_gainloss_plot);
-  ggsave(sprintf('gainloss_CLASE%03g.png',subjIDs[subject]),height=4.2,width=4.6,dpi=300);
+  fig_name = sprintf('gainloss_CLASE%03g.png',subjIDs[subject]);
+  if (!file.exists(fig_name)){
+    ggsave(fig_name,height=4.2,width=4.6,dpi=300);
+  }
   
   binary_gainonly_plot = ggplot(data = tmpdata[tmpdata$riskyloss >= 0,], aes(x = riskygain, y = certainalternative)) + 
     geom_point(aes(color = as.logical(tmpdata$choice[tmpdata$riskyloss >= 0]), alpha = 0.7, size = 3)) + 
@@ -128,16 +131,23 @@ for (subject in 1:number_of_subjects){
     theme_linedraw() + theme(legend.position = "none", aspect.ratio=1) + 
     ggtitle(sprintf('Gain-Only Decisions: CLASE%03g',subjIDs[subject]));
   print(binary_gainonly_plot);
-  ggsave(sprintf('gainonly_CLASE%03g.png',subjIDs[subject]),height=4.2,width=4.6,dpi=300);
+  fig_name = sprintf('gainonly_CLASE%03g.png',subjIDs[subject]);
+  if (!file.exists(fig_name)){
+    ggsave(fig_name,height=4.2,width=4.6,dpi=300);
+  }
 }
 
 parallel::stopCluster(cl = my.cluster)
-estimation_time_elapsed = (proc.time()[[3]] - estimation_start_time)/60/60; # time elapsed in HOURS
+estimation_time_elapsed = (proc.time()[[3]] - estimation_start_time)/60; # time elapsed in MINUTES
 
-keepsubj = vector(length = number_of_subjects);
-keepsubj[] = T; # set default to keep
-keepsubj[subjIDs == 6] = F; # CLASE 006 dropped (boundary estimates; poor performance on check trials)
-keepsubj[subjIDs == 20] = F; # CLASE 020 dropped (boundary estimate for L; so-so performance on check trials)
+cat(sprintf('Estimation finished. Took %.1f minutes.\n', estimation_time_elapsed));
+
+to_exclude = c(6, 20);
+# CLASE 006 dropped (boundary estimates; poor performance on check trials)
+# CLASE 020 dropped (boundary estimate for L; so-so performance on check trials)
+keepsubj = !(subjIDs %in% to_exclude)
+
+cat(sprintf('Total of %g participants kept (out of %g collected).\n', sum(keepsubj), length(keepsubj)))
 
 print(estimated_parameters[keepsubj,])
 

@@ -181,7 +181,14 @@ par(mfrow = c(1,1))
 # estimated_parameter_errors = estimated_parameter_errors[ind,];
 
 pdf(file="behavioral_estimates.pdf", width = 5, height = 2.8)
-par(mfrow = c(1,3))
+
+layout(matrix(c(1,1,2,3,4,4,5,6),2,4,byrow = T), heights = c(.5,2))
+# layout.show(6)
+
+# Plot densities
+
+
+# Plot estimates
 barplot_lambda <- barplot(horiz = T, estimated_parameters[keepsubj,'lambda'], 
               col = rgb(1,.45,.2), xlim = c(0,5), xlab = 'Loss aversion (lambda)')
 axis(side = 2, at = c(-1,10))
@@ -220,7 +227,7 @@ points(x = 65.0, y = 0, pch = 24, cex = 1, bg = 'white')
 # save(sprintf('gainloss_CLASE%03g_forgrant.eps',subjIDs[subject]),height=4.2,width=4.6,dpi=1200);
 
 # mtext(paste0('Estimates for ', number_of_subjects_kept, ' subjects'),side = 3,line = - 2,outer = TRUE)
-par(mfrow = c(1,1))
+# par(mfrow = c(1,1))
 dev.off()
 
 # save(list = c('recovered_parameters','recovered_nlls','recovered_parameter_errors',

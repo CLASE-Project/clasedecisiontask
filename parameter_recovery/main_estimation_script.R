@@ -251,9 +251,20 @@ for (s in 1:number_of_subjects_kept){
   p_risky[s,] = 1/(1 + exp(-tmpmu / (32^tmprho) * (gain_val^tmprho + -tmplambda * abs(loss_vals)^tmprho)));
 }
 
-plot(gainloss_vals_diff, p_risky[1,], type = 'l', col = rgb(0, 0, 0, .5), lwd = 4)
+pdf(file="softmaxes.pdf", width = 3, height = 3.5)
+
+plot(gainloss_vals_diff, p_risky[1,], type = 'l', col = rgb(0, 0, 0, .5), lwd = 5,
+     yaxt = "n", xaxt = "n")
+axis(2, at = c(0, 0.5, 1))
+axis(1, at = c(-8, 0, 8), labels = c("-$8", "$0", "$8"))
+
 for (s in 2:number_of_subjects_kept){
-  lines(x = gainloss_vals_diff, y = p_risky[s,], col = rgb(0, 0, 0, .5), lwd = 4)
+  if (s == 4){
+    lines(x = gainloss_vals_diff, y = p_risky[s,], col = rgb(0, 0, 0, .9), lwd = 5)
+  } else {
+    lines(x = gainloss_vals_diff, y = p_risky[s,], col = rgb(0, 0, 0, .5), lwd = 5)
+  }
 }
 
+dev.off()
 

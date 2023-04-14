@@ -1,16 +1,18 @@
 #### Environment setup #### 
 
-# Working directory needs to be set to `parameter_recovery` directory of the repository.
-setwd('/Users/sokolhessner/Documents/gitrepos/clasedecisiontask/parameter_recovery/')
-
-source('./choice_probability.R');
-source('./binary_choice_from_probability.R')
-source('./negLLprospect.R');
-source('./check_trial_analysis.R');
 library('ggplot2')
 library('doParallel')
 library('foreach')
 library('numDeriv')
+library('here')
+
+# Working directory needs to be set to `parameter_recovery` directory of the repository.
+setwd('/Users/sokolhessner/Documents/gitrepos/clasedecisiontask/analysis/behavior/')
+
+source('./choice_probability.R');
+source('./binary_choice_from_probability.R');
+source('./negLLprospect.R');
+source('./check_trial_analysis.R');
 eps = .Machine$double.eps;
 
 iterations_per_estimation = 200; # how many times to perform the maximum likelihood estimation procedure on a given choiceset, for robustness.
@@ -149,7 +151,7 @@ to_exclude = c(6, 20, 21);
 # CLASE 021 dropped (boundary estimate for L; was mostly OK with check trials)
 keepsubj = !(subjIDs %in% to_exclude)
 
-cat(sprintf('Total of %g participants kept (out of %g collected).\n', sum(keepsubj), length(keepsubj)))
+cat(sprintf('Total of %g participants kept out of %g collected.\n', sum(keepsubj), length(keepsubj)))
 
 cat('Kept subject parameter estimates:\n')
 print(estimated_parameters[keepsubj,])

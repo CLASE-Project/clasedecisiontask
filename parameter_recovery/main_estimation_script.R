@@ -79,8 +79,6 @@ for (subject in 1:number_of_subjects){
   
   likelihood_correct_check_trial[subject] = check_trial_analysis(tmpdata);
   
-  cat(sprintf('Subject %03i missed %i trials; had a %.2f likelihood of correctly answering %g check trials.\n',subjIDs[subject],0+sum((data$subjID == subjIDs[subject]) & is.na(data$choice)), likelihood_correct_check_trial[subject], number_check_trials))
-
   # Placeholders for all the iterations of estimation we're doing
   all_estimates = matrix(nrow = iterations_per_estimation, ncol = number_of_parameters);
   all_nlls = matrix(nrow = iterations_per_estimation, ncol = 1);
@@ -135,6 +133,9 @@ for (subject in 1:number_of_subjects){
   if (!file.exists(fig_name)){
     ggsave(fig_name,height=4.2,width=4.6,dpi=300);
   }
+  
+  cat(sprintf('Subject %03i missed %i trials; had a %.2f likelihood of correctly answering %g check trials. Mean choice likelihood of %.2f given best fit estimates.\n',subjIDs[subject],0+sum((data$subjID == subjIDs[subject]) & is.na(data$choice)), likelihood_correct_check_trial[subject], number_check_trials,mean_choice_likelihood[subject]))
+  
 }
 
 parallel::stopCluster(cl = my.cluster)
@@ -142,16 +143,21 @@ estimation_time_elapsed = (proc.time()[[3]] - estimation_start_time)/60; # time 
 
 cat(sprintf('Estimation finished. Took %.1f minutes.\n', estimation_time_elapsed));
 
-to_exclude = c(6, 20);
+to_exclude = c(6, 20, 21);
 # CLASE 006 dropped (boundary estimates; poor performance on check trials)
 # CLASE 020 dropped (boundary estimate for L; so-so performance on check trials)
+# CLASE 021 dropped (boundary estimate for L; was mostly OK with check trials)
 keepsubj = !(subjIDs %in% to_exclude)
 
 cat(sprintf('Total of %g participants kept (out of %g collected).\n', sum(keepsubj), length(keepsubj)))
 
+cat('Kept subject parameter estimates:\n')
 print(estimated_parameters[keepsubj,])
 
-cat(sprintf('Mean choice likelihood = %.2f', mean(mean_choice_likelihood[keepsubj])))
+cat(sprintf('Mean choice likelihood = %.2f\n', mean(mean_choice_likelihood[keepsubj])))
+
+cat('Dropped subject parameter estimates:\n')
+print(estimated_parameters[!keepsubj,])
 
 df_foroutput = cbind(subjIDs[keepsubj],estimated_parameters[keepsubj,],estimated_parameter_errors[keepsubj,])
 colnames(df_foroutput) <- c('subjectIDs','rho','lambda','mu','rhoSE','lambdaSE','muSE')
@@ -173,10 +179,7 @@ par(mfrow = c(1,1))
 
 # Means & SEs
 colMeans(estimated_parameters[keepsubj,])
-
-sd(estimated_parameters[keepsubj,'rho'])/sqrt(sum(keepsubj))
-sd(estimated_parameters[keepsubj,'lambda'])/sqrt(sum(keepsubj))
-sd(estimated_parameters[keepsubj,'mu'])/sqrt(sum(keepsubj))
+apply(estimated_parameters[keepsubj,], 2, sd)/sqrt(sum(keepsubj))
 
 # 
 # original_estimated_parameters = estimated_parameters; 
@@ -253,41 +256,37 @@ points(x = mean(estimated_parameters[keepsubj,'mu']), y = 0, pch = 24, cex = 2, 
 # par(mfrow = c(1,1))
 dev.off()
 
-# save(list = c('recovered_parameters','recovered_nlls','recovered_parameter_errors',
-#               'simulated_choice_data','truevals_rho','truevals_lambda','truevals_mu',
-#               'truevals','number_of_subjects','simulations_per_subject','iterations_per_estimation',
-#               'choiceset'), file = 'parameter_recovery_output.RData')
 
-gain_val = 10;
-loss_vals = seq(from = 0, to = -19, by = -.2)
-
-gainloss_vals_diff = gain_val + loss_vals;
-
-p_risky = array(dim = c(number_of_subjects_kept, length(loss_vals)));
-
-keeponly_estimated_parameters = estimated_parameters[keepsubj,];
-
-for (s in 1:number_of_subjects_kept){
-  tmprho = keeponly_estimated_parameters[s,'rho'];
-  tmplambda = keeponly_estimated_parameters[s,'lambda'];
-  tmpmu = keeponly_estimated_parameters[s,'mu'];
-  p_risky[s,] = 1/(1 + exp(-tmpmu / (32^tmprho) * (gain_val^tmprho + -tmplambda * abs(loss_vals)^tmprho)));
-}
-
-pdf(file="softmaxes.pdf", width = 3, height = 3.5)
-
-plot(gainloss_vals_diff, p_risky[1,], type = 'l', col = rgb(0, 0, 0, .5), lwd = 5,
-     yaxt = "n", xaxt = "n")
-axis(2, at = c(0, 0.5, 1))
-axis(1, at = c(-8, 0, 8), labels = c("-$8", "$0", "$8"))
-
-for (s in 2:number_of_subjects_kept){
-  if (s == 4){
-    lines(x = gainloss_vals_diff, y = p_risky[s,], col = rgb(0, 0, 0, .9), lwd = 5)
-  } else {
-    lines(x = gainloss_vals_diff, y = p_risky[s,], col = rgb(0, 0, 0, .5), lwd = 5)
-  }
-}
-
-dev.off()
+# gain_val = 10;
+# loss_vals = seq(from = 0, to = -19, by = -.2)
+# 
+# gainloss_vals_diff = gain_val + loss_vals;
+# 
+# p_risky = array(dim = c(number_of_subjects_kept, length(loss_vals)));
+# 
+# keeponly_estimated_parameters = estimated_parameters[keepsubj,];
+# 
+# for (s in 1:number_of_subjects_kept){
+#   tmprho = keeponly_estimated_parameters[s,'rho'];
+#   tmplambda = keeponly_estimated_parameters[s,'lambda'];
+#   tmpmu = keeponly_estimated_parameters[s,'mu'];
+#   p_risky[s,] = 1/(1 + exp(-tmpmu / (32^tmprho) * (gain_val^tmprho + -tmplambda * abs(loss_vals)^tmprho)));
+# }
+# 
+# pdf(file="softmaxes.pdf", width = 3, height = 3.5)
+# 
+# plot(gainloss_vals_diff, p_risky[1,], type = 'l', col = rgb(0, 0, 0, .5), lwd = 5,
+#      yaxt = "n", xaxt = "n")
+# axis(2, at = c(0, 0.5, 1))
+# axis(1, at = c(-8, 0, 8), labels = c("-$8", "$0", "$8"))
+# 
+# for (s in 2:number_of_subjects_kept){
+#   if (s == 4){
+#     lines(x = gainloss_vals_diff, y = p_risky[s,], col = rgb(0, 0, 0, .9), lwd = 5)
+#   } else {
+#     lines(x = gainloss_vals_diff, y = p_risky[s,], col = rgb(0, 0, 0, .5), lwd = 5)
+#   }
+# }
+# 
+# dev.off()
 

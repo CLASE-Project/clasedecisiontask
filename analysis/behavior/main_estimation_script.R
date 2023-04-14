@@ -5,12 +5,12 @@ library('doParallel')
 library('foreach')
 library('numDeriv')
 library('here')
+library('rstan')
 
 # Working directory needs to be set to `parameter_recovery` directory of the repository.
 setwd('/Users/sokolhessner/Documents/gitrepos/clasedecisiontask/analysis/behavior/')
 
 source('./choice_probability.R');
-source('./binary_choice_from_probability.R');
 source('./negLLprospect.R');
 source('./check_trial_analysis.R');
 eps = .Machine$double.eps;
@@ -54,7 +54,7 @@ estimated_parameter_errors = array(dim = c(number_of_subjects, number_of_paramet
                                    dimnames = list(c(), c('rho','lambda','mu')));
 estimated_nlls = array(dim = c(number_of_subjects,1));
 mean_choice_likelihood = array(dim = c(number_of_subjects,1));
-  
+
 # # Initialize the progress bar
 # progress_bar = txtProgressBar(min = 0, max = number_of_subjects, style = 3)
 
@@ -258,6 +258,30 @@ points(x = mean(estimated_parameters[keepsubj,'mu']), y = 0, pch = 24, cex = 2, 
 # par(mfrow = c(1,1))
 dev.off()
 
+
+# Prepare for Stan
+# Remove 
+cleandata = data[is.finite(cleandata$choice),]; # remove missed trials
+# cleandata = data[!(data$subjID %in% to_exclude),]; # remove bad subjects?
+
+nsubj = length(unique(cleandata$subjID));
+
+# Make sequential subject IDs
+cleandata$seqsubjID = NA;
+
+for(s in 1:nsubj){
+  cleandata[cleandata$subjID == subjIDs[s],'seqsubjID'] = s;
+}
+
+claseDataList = list(
+  choices = cleandata$choice,
+  gain = cleandata$riskygain,
+  loss = abs(cleandata$riskyloss), # do the abs() on loss values outside of Stan
+  safe = cleandata$certainalternative,
+  ind = cleandata$seqsubjID,
+  nsubj = nsubj,
+  N = length(cleandata$choice)
+)
 
 # gain_val = 10;
 # loss_vals = seq(from = 0, to = -19, by = -.2)

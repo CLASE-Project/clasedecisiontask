@@ -283,6 +283,64 @@ claseDataList = list(
   N = length(cleandata$choice)
 )
 
+stanModel = "/Users/sokolhessner/Documents/gitrepos/clasedecisiontask/analysis/behavior/stanfiles/clase_model0_basic_L_R_M_allRFX.stan"
+
+# define some things
+nChains = 4 # number of chains (1 chain per core)
+fitSteps = 10000 # stan will save half of this many x nChains per parameter
+
+pars = c('meanRho', 'meanMu', 'meanLambda', 
+         'sdRho','sdMu','sdLambda',
+         'r','l','m'
+);
+
+starttime = proc.time()[3];
+
+seed = runif(1,1,1e6); # stan needs random integer from 1 to max supportable
+
+# compile the model
+fit0 = stan(file = stanModel, data =claseDataList, iter = 1, chains = 1, pars=pars); # this initializes or sets up the model
+
+fit0time = proc.time()[3];
+print(noquote(sprintf('Compilation time = %.1f seconds',(fit0time-starttime))));
+
+# fit with paralellization
+seed <- runif(1,1,1e6); # Stan wants a random integer from 1 to max supportable
+
+sflist1 <-
+  mclapply(1:nChains, mc.cores = nChains,
+           function(i) stan(fit = fit0, seed=seed, data = claseDataList,
+                            iter = fitSteps, chains = 1, chain_id = i,
+                            pars = pars))
+
+fittime = proc.time()[3];
+print(noquote(sprintf('Sampling time = %.1f minutes.',(fittime-fit0time)/60)))
+
+
+sflistFinal = list();
+k = 1;
+for (i in 1:nChains){
+  if (any(dim(sflist1[[i]]) > 0)) {
+    sflistFinal[[k]] <- sflist1[[i]]
+    k = k + 1;
+  }
+  else {print(noquote(sprintf('WARNING: Chain %d did not include any samples.',i)))}
+}
+
+save(stanModel, sflistFinal, file = sprintf('./stanfiles/clase_model0_R_L_M_allRFX_%s.Rdata',format(Sys.Date(), format="%Y%m%d")))
+
+model_fit_obj = sflist2stanfit(sflistFinal);
+print(model_fit_obj)
+
+sampled_values = extract(model_fit_obj);
+q95 = c(0.025, 0.975);
+
+traceplot(model_fit_obj,'meanLambda')
+
+quantile(exp(sampled_values$meanLambda), probs = q95)
+
+hist(exp(sampled_values$meanLambda), xlim = c(0,2))
+
 # gain_val = 10;
 # loss_vals = seq(from = 0, to = -19, by = -.2)
 # 

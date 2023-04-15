@@ -136,7 +136,7 @@ for (subject in 1:number_of_subjects){
     ggsave(fig_name,height=4.2,width=4.6,dpi=300);
   }
   
-  cat(sprintf('Subject %03i missed %i trials; had a %.2f likelihood of correctly answering %g check trials. Mean choice likelihood of %.2f given best fit estimates.\n',subjIDs[subject],0+sum((data$subjID == subjIDs[subject]) & is.na(data$choice)), likelihood_correct_check_trial[subject], number_check_trials,mean_choice_likelihood[subject]))
+  cat(sprintf('Subject %03i: missed %i trials; %.2f likelihood of correctly answering %g check trials; mean choice likelihood of %.2f given best estimates.\n',subjIDs[subject],0+sum((data$subjID == subjIDs[subject]) & is.na(data$choice)), likelihood_correct_check_trial[subject], number_check_trials,mean_choice_likelihood[subject]))
   
 }
 
@@ -259,9 +259,11 @@ points(x = mean(estimated_parameters[keepsubj,'mu']), y = 0, pch = 24, cex = 2, 
 dev.off()
 
 
-# Prepare for Stan
-# Remove 
-cleandata = data[is.finite(cleandata$choice),]; # remove missed trials
+
+#### Stan Analytic Code ####
+
+# Prep the data
+cleandata = data[is.finite(data$choice),]; # remove missed trials
 # cleandata = data[!(data$subjID %in% to_exclude),]; # remove bad subjects?
 
 nsubj = length(unique(cleandata$subjID));
@@ -276,7 +278,7 @@ for(s in 1:nsubj){
 claseDataList = list(
   choices = cleandata$choice,
   gain = cleandata$riskygain,
-  loss = abs(cleandata$riskyloss), # do the abs() on loss values outside of Stan
+  loss = cleandata$riskyloss, 
   safe = cleandata$certainalternative,
   ind = cleandata$seqsubjID,
   nsubj = nsubj,

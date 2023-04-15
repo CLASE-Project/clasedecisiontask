@@ -35,6 +35,9 @@ model {
   real div;
   real p[N];
   real total_sum[N];
+  real gam1u;
+  real gam2u;
+  real certu;
   
   //Priors
   meanRho ~ normal(0,30);
@@ -50,12 +53,25 @@ model {
   l ~ normal(meanLambda, sdLambda);
 
   for (t in 1:N) {
-    div = 61^rtmp[ind[t]];
+    div = 32^rtmp[ind[t]];
     // Model with M, L, R, DB
     
-    total_sum[t] = mtmp[ind[t]] / div * (0.5 * gain[t]^rtmp[ind[t]] +
-                                           -0.5 * ltmp[ind[t]] * loss[t]^rtmp[ind[t]] -
-                                           safe[t]^rtmp[ind[t]]);
+    if (gain[t] < 0)
+      gam1u = -0.5 * ltmp[ind[t]] * pow(-gain[t],rtmp[ind[t]]);
+    else
+      gam1u = 0.5 * pow(gain[t],rtmp[ind[t]]);
+    
+    if (loss[t] < 0)
+      gam2u = -0.5 * ltmp[ind[t]] * pow(-loss[t],rtmp[ind[t]]);
+    else
+      gam2u = 0.5 * pow(loss[t],rtmp[ind[t]]);
+    
+    if (safe[t] < 0)
+      certu = -ltmp[ind[t]] * pow(-safe[t],rtmp[ind[t]]);
+    else
+      certu = pow(safe[t],rtmp[ind[t]]);
+    
+    total_sum[t] = mtmp[ind[t]] / div * (gam1u + gam2u - certu);
   }
   
   p = inv_logit(total_sum);

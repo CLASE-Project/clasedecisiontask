@@ -264,15 +264,16 @@ dev.off()
 
 # Prep the data
 cleandata = data[is.finite(data$choice),]; # remove missed trials
-# cleandata = data[!(data$subjID %in% to_exclude),]; # remove bad subjects?
+cleandata = cleandata[!(cleandata$subjID %in% to_exclude),]; # OPTIONAL: remove bad subjects?
 
 nsubj = length(unique(cleandata$subjID));
+clean_subjIDs = unique(cleandata$subjID);
 
 # Make sequential subject IDs
 cleandata$seqsubjID = NA;
 
-for(s in 1:nsubj){
-  cleandata[cleandata$subjID == subjIDs[s],'seqsubjID'] = s;
+for(s in 1:length(unique(cleandata$subjID))){
+  cleandata[cleandata$subjID == clean_subjIDs[s],'seqsubjID'] = s;
 }
 
 claseDataList = list(
@@ -338,6 +339,22 @@ sampled_values = extract(model_fit_obj);
 q95 = c(0.025, 0.975);
 
 traceplot(model_fit_obj,'meanLambda')
+
+cat(sprintf('Group mean Lambda: M = %.2f, 95%% CI: [%.2f, %.2f].', mean(exp(sampled_values$meanLambda)), 
+            quantile(exp(sampled_values$meanLambda), probs = q95[1]), quantile(exp(sampled_values$meanLambda), probs = q95[2])))
+cat(sprintf('Group mean Rho: M = %.2f, 95%% CI: [%.2f, %.2f].', mean(exp(sampled_values$meanRho)), 
+            quantile(exp(sampled_values$meanRho), probs = q95[1]), quantile(exp(sampled_values$meanRho), probs = q95[2])))
+cat(sprintf('Group mean Mu: M = %.2f, 95%% CI: [%.2f, %.2f].', mean(exp(sampled_values$meanMu)), 
+            quantile(exp(sampled_values$meanMu), probs = q95[1]), quantile(exp(sampled_values$meanMu), probs = q95[2])))
+
+l_xvals = seq(from = -5, to = 2, by = .1);
+plot(exp(l_xvals), dnorm(l_xvals, mean = mean(sampled_values$meanLambda), sd = mean(sampled_values$sdLambda)), 
+     type = 'l', col = 'red', yaxt = 'n', xlab = 'LAMBDA', ylab = 'density')
+lim_vals = par('usr');
+abline(v = 1, lty = 'dashed')
+abline(v = mean(exp(sampled_values$meanLambda)), col = 'red', lwd = 3)
+points(y = rep(lim_vals[3] + (lim_vals[4] - lim_vals[3])/2,nsubj), 
+       x = colMeans(exp(sampled_values$l)), col = 'red', cex = 3)
 
 quantile(exp(sampled_values$meanLambda), probs = q95)
 

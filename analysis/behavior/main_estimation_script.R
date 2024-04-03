@@ -55,6 +55,9 @@ estimated_parameter_errors = array(dim = c(number_of_subjects, number_of_paramet
 estimated_nlls = array(dim = c(number_of_subjects,1));
 mean_choice_likelihood = array(dim = c(number_of_subjects,1));
 
+mean_reactiontimes = array(dim = c(number_of_subjects,1));
+mean_riskychoices = array(dim = c(number_of_subjects,1));
+
 # # Initialize the progress bar
 # progress_bar = txtProgressBar(min = 0, max = number_of_subjects, style = 3)
 
@@ -80,6 +83,9 @@ for (subject in 1:number_of_subjects){
   number_check_trials = sum(tmpdata$ischecktrial);
   
   likelihood_correct_check_trial[subject] = check_trial_analysis(tmpdata);
+  
+  mean_reactiontimes[subject] = mean(tmpdata$RT);
+  mean_riskychoices[subject] = mean(tmpdata$choice);
   
   # Placeholders for all the iterations of estimation we're doing
   all_estimates = matrix(nrow = iterations_per_estimation, ncol = number_of_parameters);
@@ -219,13 +225,13 @@ plot(x = exp(m_xvals), y = dnorm(m_xvals,mean = 3.226281, sd = 0.876446),
 # Plot estimates
 barplot_lambda <- barplot(horiz = T, estimated_parameters[keepsubj,'lambda'], 
               col = rgb(1,.45,.2), xlim = c(0,5), xlab = 'Loss aversion (lambda)')
-axis(side = 2, at = c(-1,10))
+axis(side = 2, at = c(-1,14))
 arrows(y0 = barplot_lambda,
        x0 = estimated_parameters[keepsubj,'lambda'] - estimated_parameter_errors[keepsubj,'lambda'],
        x1 = estimated_parameters[keepsubj,'lambda'] + estimated_parameter_errors[keepsubj,'lambda'],
        length = 0)
-axis(side = 2, at = c(-1,10))
-lines(x = c(1,1), y = c(0,10), lty = 'dashed')
+axis(side = 2, at = c(-1,14))
+lines(x = c(1,1), y = c(0,14), lty = 'dashed')
 points(x = mean(estimated_parameters[keepsubj,'lambda']), y = 0, pch = 24, cex = 2, bg = rgb(1,.45,.2))
 # points(x = 2.22, y = 0, pch = 24, cex = 1, bg = 'black')
 # points(x = 1.62, y = 0, pch = 24, cex = 1, bg = 'white')
@@ -236,8 +242,8 @@ arrows(y0 = barplot_lambda,
        x0 = estimated_parameters[keepsubj,'rho'] - estimated_parameter_errors[keepsubj,'rho'],
        x1 = estimated_parameters[keepsubj,'rho'] + estimated_parameter_errors[keepsubj,'rho'],
        length = 0)
-axis(side = 2, at = c(-1,10))
-lines(x = c(1,1), y = c(0,10), lty = 'dashed')
+axis(side = 2, at = c(-1,14))
+lines(x = c(1,1), y = c(0,14), lty = 'dashed')
 points(x = mean(estimated_parameters[keepsubj,'rho']), y = 0, pch = 24, cex = 2, bg = rgb(1,1,0))
 # points(x = 0.92, y = 0, pch = 24, cex = 1, bg = 'black')
 # points(x = 0.88, y = 0, pch = 24, cex = 1, bg = 'white')
@@ -248,7 +254,7 @@ arrows(y0 = barplot_lambda,
        x0 = estimated_parameters[keepsubj,'mu'] - estimated_parameter_errors[keepsubj,'mu'],
        x1 = estimated_parameters[keepsubj,'mu'] + estimated_parameter_errors[keepsubj,'mu'],
        length = 0)
-axis(side = 2, at = c(-1,10))
+axis(side = 2, at = c(-1,14))
 points(x = mean(estimated_parameters[keepsubj,'mu']), y = 0, pch = 24, cex = 2, bg = rgb(0,1,1))
 # points(x = 25.9, y = 0, pch = 24, cex = 1, bg = 'black')
 # points(x = 65.0, y = 0, pch = 24, cex = 1, bg = 'white')
@@ -289,8 +295,8 @@ claseDataList = list(
 stanModel = "/Users/sokolhessner/Documents/gitrepos/clasedecisiontask/analysis/behavior/stanfiles/clase_model0_basic_L_R_M_allRFX.stan"
 
 # define some things
-nChains = 4 # number of chains (1 chain per core)
-fitSteps = 10000 # stan will save half of this many x nChains per parameter
+nChains = 6 # number of chains (1 chain per core)
+fitSteps = 20000 # stan will save half of this many x nChains per parameter
 
 pars = c('meanRho', 'meanMu', 'meanLambda', 
          'sdRho','sdMu','sdLambda',
@@ -358,7 +364,7 @@ points(y = rep(lim_vals[3] + (lim_vals[4] - lim_vals[3])/2,nsubj),
 
 quantile(exp(sampled_values$meanLambda), probs = q95)
 
-hist(exp(sampled_values$meanLambda), xlim = c(0,2))
+hist(exp(sampled_values$meanLambda), xlim = c(0,2), breaks = 50)
 
 # gain_val = 10;
 # loss_vals = seq(from = 0, to = -19, by = -.2)

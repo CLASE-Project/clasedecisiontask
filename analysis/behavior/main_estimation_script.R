@@ -122,7 +122,7 @@ for (subject in 1:number_of_subjects){
   
   binary_gainloss_plot = ggplot(data = tmpdata[tmpdata$riskyloss < 0,], aes(x = riskygain, y = riskyloss)) + 
     geom_point(aes(color = as.logical(tmpdata$choice[tmpdata$riskyloss < 0]), alpha = 0.7, size = 3)) + 
-    scale_color_manual(values = c('#ff0000','#00ff44'), guide=FALSE) + 
+    scale_color_manual(values = c('#ff0000','#00ff44'), guide='none') + 
     theme_linedraw() + theme(legend.position = "none", aspect.ratio=1) + 
     ggtitle(sprintf('Gain-Loss Decisions: CLASE%03g',subjIDs[subject]));
   print(binary_gainloss_plot);
@@ -133,7 +133,7 @@ for (subject in 1:number_of_subjects){
   
   binary_gainonly_plot = ggplot(data = tmpdata[tmpdata$riskyloss >= 0,], aes(x = riskygain, y = certainalternative)) + 
     geom_point(aes(color = as.logical(tmpdata$choice[tmpdata$riskyloss >= 0]), alpha = 0.7, size = 3)) + 
-    scale_color_manual(values = c('#ff0000','#00ff44'),guide=FALSE) + 
+    scale_color_manual(values = c('#ff0000','#00ff44'),guide='none') + 
     theme_linedraw() + theme(legend.position = "none", aspect.ratio=1) + 
     ggtitle(sprintf('Gain-Only Decisions: CLASE%03g',subjIDs[subject]));
   print(binary_gainonly_plot);
@@ -151,10 +151,14 @@ estimation_time_elapsed = (proc.time()[[3]] - estimation_start_time)/60; # time 
 
 cat(sprintf('Estimation finished. Took %.1f minutes.\n', estimation_time_elapsed));
 
-to_exclude = c(6, 20, 21);
+estimated_parameters = cbind(subjIDs, estimated_parameters)
+
+to_exclude = c(6, 20, 21, 32, 36);
 # CLASE 006 dropped (boundary estimates; poor performance on check trials)
 # CLASE 020 dropped (boundary estimate for L; so-so performance on check trials)
 # CLASE 021 dropped (boundary estimate for L; was mostly OK with check trials)
+# CLASE 032 dropped (low check trial success: 83%; missed trials (12); near-boundary estimate: L = 0.26)
+# CLASE 036 dropped (low check trial success: 75%; near-boundary estimate: L = 0.6)
 keepsubj = !(subjIDs %in% to_exclude)
 
 cat(sprintf('Total of %g participants kept out of %g collected.\n', sum(keepsubj), length(keepsubj)))
@@ -167,7 +171,7 @@ cat(sprintf('Mean choice likelihood = %.2f\n', mean(mean_choice_likelihood[keeps
 cat('Dropped subject parameter estimates:\n')
 print(estimated_parameters[!keepsubj,])
 
-df_foroutput = cbind(subjIDs[keepsubj],estimated_parameters[keepsubj,],estimated_parameter_errors[keepsubj,])
+df_foroutput = cbind(estimated_parameters[keepsubj,],estimated_parameter_errors[keepsubj,])
 colnames(df_foroutput) <- c('subjectIDs','rho','lambda','mu','rhoSE','lambdaSE','muSE')
 write.csv(df_foroutput,file = sprintf('estimation_results_%s.csv',format(Sys.Date(), format="%Y%m%d")), row.names = F)
 
@@ -186,8 +190,8 @@ mtext(paste0('Estimates for ', number_of_subjects_kept, ' subjects'),side = 3,li
 par(mfrow = c(1,1))
 
 # Means & SEs
-colMeans(estimated_parameters[keepsubj,])
-apply(estimated_parameters[keepsubj,], 2, sd)/sqrt(sum(keepsubj))
+colMeans(estimated_parameters[keepsubj,2:4])
+apply(estimated_parameters[keepsubj,2:4], 2, sd)/sqrt(sum(keepsubj))
 
 # 
 # original_estimated_parameters = estimated_parameters; 

@@ -6,6 +6,8 @@ library('foreach')
 library('numDeriv')
 library('here')
 library('rstan')
+library('lme4')
+library('lmerTest')
 
 # Working directory needs to be set to `parameter_recovery` directory of the repository.
 setwd('/Users/sokolhessner/Documents/gitrepos/clasedecisiontask/analysis/behavior/')
@@ -35,6 +37,93 @@ for(i in 1:number_of_subjects){
 subjIDs = unique(data$subjID);
 
 likelihood_correct_check_trial = array(dim = c(number_of_subjects,1));
+
+# LFP Data path
+lfpdatapath = '~/Documents/Dropbox/Academics/Research/CLASE Project 2021/R01-2024_02_05-Submission/NeuroBehaviorPreliminary/';
+fnLFP = dir(lfpdatapath,pattern = glob2rx('CLASE*csv'),full.names = T);
+number_of_lfp_subjects = length(fnLFP)
+
+# LFP Column Names
+
+# FORMAT: Stat_Brain_Freq_Epoch
+
+# Summary STATISTICS:
+#   AVE = Average power
+#   STD = Standard Deviation power 
+#   MAX = Maximum power
+#   MED = Median power
+#   FREQ = Peak frequency at Maximum power
+
+# BRAIN Regions:
+#   AMYL = Left Amygdala
+#   AMYR = Right Amygdala
+#   ORBL = Left Orbital frontal
+#   ORBR = Right Orbital frontal
+#   ACGL = Left Anterior Cingulate
+#   ACGR = Right Anterior Cingulate
+#   PCGL = Left Posterior Cingulate
+#   PCGR = Right Posterior Cingulate
+
+# LFP FREQUENCY Bands:
+#   D = ‘delta’: 0-4 Hz
+#   T = ‘theta’: 4-8 Hz
+#   A = ‘alpha’: 8-13 Hz
+#   LB = ‘low beta’: 13-21 Hz
+#   HB = ‘high beta’: 21-30 Hz
+#   LG = ‘ low gamma’: 30-90 Hz
+#   HG = ‘gamma’: 90-250 Hz
+
+# EPOCHS: 
+#   EP1 = 500ms prior to ChoiceShow
+#   EP2 = ChoiceShow to ResponseWindowStart
+#   EP3 = ResponseWindowStart to ResponseWindowEnd
+#   EP4 =  ResponseWindowEnd to OutcomeDisplayStart
+#   EP5 = OutcomeDisplayStart to OutcomeDisplayEnd
+#   EP6 = OutcomeDisplayEnd to 500ms post
+
+# INITIAL NAME:
+colnamesLFP = c('AVE_AMYL_T_EP5', # average left amygdala, low gamma, outcome
+                'AVE_AMYR_T_EP5')
+n_lfp_datapoints = length(colnamesLFP);
+
+# Load LFP data
+lfp_data = as.data.frame(matrix(data = NA, nrow = 0, ncol = n_lfp_datapoints + 1))
+
+for(i in 1:number_of_lfp_subjects){
+  tmpf = read.csv(fnLFP[i]); # read LFP data
+  tmp_subjID = as.numeric(substr(fnLFP[i],134,136)); # extract subject number
+  tmp_lfp_data = as.data.frame(matrix(data = NA, nrow = 135, ncol = 3)); # pre-create the temporary dataframe
+  tmp_lfp_data[,1] = tmp_subjID; # ... and seed it with the subject ID
+  for(lfp_datapoints in 1:n_lfp_datapoints){
+    if(colnamesLFP[lfp_datapoints] %in% colnames(tmpf)){ # check that this subject has this datapoint
+      ind = which(colnamesLFP[lfp_datapoints] == colnames(tmpf)); # if so... find it
+      tmp_lfp_data[,lfp_datapoints+1] = tmpf[,ind]; # ... and put it in.
+    }
+  }
+  lfp_data = rbind(lfp_data,tmp_lfp_data) # bind the LFP data together
+}
+
+lfp_subjIDs = unique(lfp_data[,1]); # who are our LFP subjects?
+colnames(lfp_data) <- c('subjID',colnamesLFP); # name the columns
+
+# Append the behavioral data
+for(i in 1:n_lfp_datapoints){
+  data[colnamesLFP[i]] = NA; # First, make & preset the columns we'll be filling
+}
+
+for(s in lfp_subjIDs){ # go LFP subject by LFP subject
+  data_ind = which(data$subjID == s) # which data rows
+  lfp_ind = which(lfp_data$subjID == s) # which LFP data rows
+  for(lfp_datapoints in 1:n_lfp_datapoints){
+    data[data_ind,colnamesLFP[lfp_datapoints]] = lfp_data[lfp_ind,colnamesLFP[lfp_datapoints]];
+  }
+}
+
+data[,'otc_loss'] = NA
+data[,'otc_gain'] = NA
+data[data$outcome == data$riskyloss,'otc_loss'] = data$outcome[data$outcome == data$riskyloss];
+data[data$outcome == data$riskygain,'otc_gain'] = data$outcome[data$outcome == data$riskygain];
+
 
 #### Initialize estimation procedure ####
 set.seed(Sys.time()); # Estimation procedure is sensitive to starting values

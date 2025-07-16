@@ -208,7 +208,7 @@ for (subject in 1:number_of_subjects){
   
   # The parallelized loop
   alloutput <- foreach(iteration=1:iterations_per_estimation, .combine=rbind) %dopar% {
-    initial_values = runif(3)*initial_values_upperbound + initial_values_lowerbound; # create random initial values
+    initial_values = runif(number_of_parameters)*initial_values_upperbound + initial_values_lowerbound; # create random initial values
 
     # The estimation itself
     output <- optim(initial_values, negLLprospect, choiceset = choiceset, choices = choices,
@@ -243,7 +243,7 @@ for (subject in 1:number_of_subjects){
   
   # The parallelized loop
   alloutput_L1 <- foreach(iteration=1:iterations_per_estimation, .combine=rbind) %dopar% {
-    initial_values = runif(3)*initial_values_upperbound_L1 + initial_values_lowerbound_L1; # create random initial values
+    initial_values = runif(number_of_constrained_parameters)*initial_values_upperbound_L1 + initial_values_lowerbound_L1; # create random initial values
     
     # The estimation itself
     output <- optim(initial_values, negLLprospect_lambda1, choiceset = choiceset, choices = choices,
@@ -307,7 +307,7 @@ estimated_parameters = cbind(subjIDs, estimated_parameters)
 # Do LRTs for the 2 models
 LRT = -2 * (estimated_nlls - estimated_nlls_L1);
 df = 1;
-lrtp = 1-pchisq(LRT, 1)
+lrtp = 1-pchisq(LRT, df)
 
 test_results = cbind(subjIDs, estimated_parameters[,3], lrtp, lrtp < 0.05)
 test_results = as.data.frame(test_results)

@@ -14,6 +14,7 @@ setwd('/Users/sokolhessner/Documents/gitrepos/clasedecisiontask/analysis/behavio
 
 source('./choice_probability.R');
 source('./negLLprospect.R');
+source('./negLLprospect_lambda1.R');
 source('./check_trial_analysis.R');
 eps = .Machine$double.eps;
 
@@ -128,6 +129,7 @@ data[data$outcome == data$riskygain,'otc_gain'] = data$outcome[data$outcome == d
 #### Initialize estimation procedure ####
 set.seed(Sys.time()); # Estimation procedure is sensitive to starting values
 
+# For Full Parameter Estimation
 number_of_parameters = 3;
 
 initial_values_lowerbound = c(0.6, 0.2, 25); # for rho, lambda, and mu
@@ -143,6 +145,26 @@ estimated_parameter_errors = array(dim = c(number_of_subjects, number_of_paramet
                                    dimnames = list(c(), c('rho','lambda','mu')));
 estimated_nlls = array(dim = c(number_of_subjects,1));
 mean_choice_likelihood = array(dim = c(number_of_subjects,1));
+
+
+# For L = 1 Constrained estimation
+number_of_constrained_parameters = 2;
+
+initial_values_lowerbound_L1 = c(0.6, 25); # for rho, and mu
+initial_values_upperbound_L1 = c(1.4, 100) - initial_values_lowerbound; # for rho, and mu
+
+estimation_lowerbound_L1 = c(eps,eps); # lower bound of parameter values is machine precision above zero
+estimation_upperbound_L1 = c(2, 300); # sensible/probable upper bounds on parameter values
+
+# Create placeholders for the final estimates of the parameters, errors, and NLLs
+estimated_parameters_L1 = array(dim = c(number_of_subjects, number_of_constrained_parameters),
+                             dimnames = list(c(), c('rho','mu')));
+estimated_parameter_errors_L1 = array(dim = c(number_of_subjects, number_of_constrained_parameters),
+                                   dimnames = list(c(), c('rho','mu')));
+estimated_nlls_L1 = array(dim = c(number_of_subjects,1));
+mean_choice_likelihood_L1 = array(dim = c(number_of_subjects,1));
+
+
 
 mean_reactiontimes = array(dim = c(number_of_subjects,1));
 mean_riskychoices = array(dim = c(number_of_subjects,1));
@@ -175,6 +197,9 @@ for (subject in 1:number_of_subjects){
   
   mean_reactiontimes[subject] = mean(tmpdata$RT);
   mean_riskychoices[subject] = mean(tmpdata$choice);
+  
+  
+  # Full Parameter Estimation (R, L, M)
   
   # Placeholders for all the iterations of estimation we're doing
   all_estimates = matrix(nrow = iterations_per_estimation, ncol = number_of_parameters);
@@ -209,6 +234,42 @@ for (subject in 1:number_of_subjects){
   best_hessian = hessian(func=negLLprospect, x = all_estimates[best_nll_index,], choiceset = choiceset, choices = choices)
   estimated_parameter_errors[subject,] = sqrt(diag(solve(best_hessian)));
   
+  
+  # Constrained Parameter Estimation (L = 1)
+  # Placeholders for all the iterations of estimation we're doing
+  all_estimates_L1 = matrix(nrow = iterations_per_estimation, ncol = number_of_constrained_parameters);
+  all_nlls_L1 = matrix(nrow = iterations_per_estimation, ncol = 1);
+  all_hessians_L1 = array(dim = c(iterations_per_estimation, number_of_constrained_parameters, number_of_constrained_parameters))
+  
+  # The parallelized loop
+  alloutput_L1 <- foreach(iteration=1:iterations_per_estimation, .combine=rbind) %dopar% {
+    initial_values = runif(3)*initial_values_upperbound_L1 + initial_values_lowerbound_L1; # create random initial values
+    
+    # The estimation itself
+    output <- optim(initial_values, negLLprospect_lambda1, choiceset = choiceset, choices = choices,
+                    method = "L-BFGS-B", lower = estimation_lowerbound_L1, upper = estimation_upperbound_L1, hessian = TRUE);
+    
+    c(output$par,output$value); # the things (parameter values & NLL) to save/combine across parallel estimations
+  }
+  
+  all_estimates_L1 = alloutput_L1[,1:2];
+  all_nlls_L1 = alloutput_L1[,4];
+  
+  best_nll_index_L1 = which.min(all_nlls_L1); # identify the single best estimation
+  
+  # Save out the parameters & NLLs from the single best estimation
+  estimated_parameters_L1[subject,] = all_estimates_L1[best_nll_index_L1,];
+  estimated_nlls_L1[subject] = all_nlls_L1[best_nll_index_L1];
+  
+  # # Calculate & store the mean choice likelihood given our best estimates
+  # choiceP = choice_probability(choiceset,estimated_parameters[subject,]);
+  # mean_choice_likelihood_L1[subject] = mean(choices * choiceP + (1 - choices) * (1-choiceP));
+  
+  # Calculate the hessian at those parameter values & save out
+  best_hessian_L1 = hessian(func=negLLprospect_lambda1, x = all_estimates_L1[best_nll_index_L1,], choiceset = choiceset, choices = choices)
+  estimated_parameter_errors_L1[subject,] = sqrt(diag(solve(best_hessian_L1)));
+  
+  
   binary_gainloss_plot = ggplot(data = tmpdata[tmpdata$riskyloss < 0,], aes(x = riskygain, y = riskyloss)) + 
     geom_point(aes(color = as.logical(tmpdata$choice[tmpdata$riskyloss < 0]), alpha = 0.7, size = 3)) + 
     scale_color_manual(values = c('#ff0000','#00ff44'), guide='none') + 
@@ -241,6 +302,23 @@ estimation_time_elapsed = (proc.time()[[3]] - estimation_start_time)/60; # time 
 cat(sprintf('Estimation finished. Took %.1f minutes.\n', estimation_time_elapsed));
 
 estimated_parameters = cbind(subjIDs, estimated_parameters)
+
+
+# Do LRTs for the 2 models
+LRT = -2 * (estimated_nlls - estimated_nlls_L1);
+df = 1;
+lrtp = 1-pchisq(LRT, 1)
+
+test_results = cbind(subjIDs, estimated_parameters[,3], lrtp, lrtp < 0.05)
+test_results = as.data.frame(test_results)
+colnames(test_results) = c('subjIDs','lambda','lrtp','isdifffrom1')
+test_results[order(test_results$lambda),]
+
+subjIDs_gainseeking = test_results$subjIDs[test_results$lambda < 1 & test_results$isdifffrom1 == 1]
+subjIDs_gainlossneutral = test_results$subjIDs[test_results$isdifffrom1 == 0]
+subjIDs_lossaverse = test_results$subjIDs[test_results$lambda > 1 & test_results$isdifffrom1 == 1]
+
+
 
 to_exclude = c(6, 20, 21, 32, 36);
 # CLASE 006 dropped (boundary estimates; poor performance on check trials)
